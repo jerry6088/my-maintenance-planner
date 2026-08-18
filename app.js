@@ -155,6 +155,141 @@ if(localStorage.getItem(MIG)!=='1'){
  localStorage.setItem(TK,JSON.stringify(tasks));
 })();
 
+
+// OEM Power Equipment Update 2 — Honda Recon 250 + Mahindra 4530.
+// Enriches tasks only; does not overwrite current asset meter readings.
+(function(){
+ const KEY='hmv2-oem-honda-mahindra-1';
+ if(localStorage.getItem(KEY)==='1') return;
+ const find=(asset,name)=>tasks.find(t=>t.asset===asset&&t.name===name);
+ const add=(asset,name,data={})=>{
+   let t=find(asset,name);
+   if(!t){t={id:uid(),asset,name,dueDate:'',months:0,miles:0,hours:0,notes:'',parts:[]};tasks.push(t);}
+   Object.assign(t,data); if(!Array.isArray(t.parts))t.parts=[];
+   return t;
+ };
+ const parts=(asset,name,arr)=>add(asset,name).parts=arr;
+
+ // 2007 Honda Recon 250 (TRX250TE/TM family schedule).
+ add('2007 Honda Recon 250','Engine oil service',{months:12,miles:600,hours:100,
+   notes:'Honda factory schedule: initial oil change at 100 mi / 20 hr / 1 month; regular oil replacement every 600 mi / 100 hr / 12 months, whichever comes first.'});
+ parts('2007 Honda Recon 250','Engine oil service',[
+   {description:'4-stroke motorcycle/ATV engine oil',oem:'Honda-recommended oil — verify viscosity for temperature',qty:'Verify capacity in exact owner manual',aftermarket:'',notes:'Use oil meeting Honda manual requirements; exact capacity intentionally left for model/manual verification.'}
+ ]);
+ add('2007 Honda Recon 250','Air cleaner service',{miles:600,hours:100,
+   notes:'Honda schedule: clean air cleaner at regular service intervals; service more frequently in dusty areas, sand or snow.',parts:[
+   {description:'Air cleaner element',oem:'Verify exact Honda OEM part #',qty:'1 as needed',aftermarket:'',notes:'Exact element number requires TE/TM configuration/parts lookup.'}
+ ]});
+ add('2007 Honda Recon 250','Air cleaner housing drain tube inspection',{miles:600,hours:100,
+   notes:'Inspect drain tube at regular maintenance; service more frequently after muddy/very wet operation.'});
+ add('2007 Honda Recon 250','Spark plug inspection',{miles:600,hours:100,
+   notes:'Honda schedule includes spark plug inspection at regular maintenance intervals.',parts:[
+   {description:'Spark plug',oem:'Verify exact Honda/NGK part #',qty:'1',aftermarket:'',notes:'Part number intentionally not guessed.'}
+ ]});
+ add('2007 Honda Recon 250','Valve clearance inspection',{miles:600,hours:100,
+   notes:'Honda schedule: inspect valve clearance at initial 100 mi / 20 hr and regular 600 mi / 100 hr intervals.'});
+ add('2007 Honda Recon 250','Engine oil strainer screen cleaning',{miles:1200,hours:200,
+   notes:'Honda maintenance schedule includes cleaning the engine oil strainer screen.'});
+ add('2007 Honda Recon 250','Centrifugal oil filter cleaning',{miles:1200,hours:200,
+   notes:'Honda maintenance schedule includes cleaning the centrifugal oil filter.'});
+ add('2007 Honda Recon 250','Engine idle speed inspection',{miles:600,hours:100,
+   notes:'Honda schedule includes idle-speed inspection at initial and regular maintenance intervals.'});
+ add('2007 Honda Recon 250','Rear final gear case oil inspection',{miles:600,hours:100,
+   notes:'Honda schedule includes final gear case oil inspection; replacement is specified every 2 years.',parts:[
+   {description:'Final drive gear oil',oem:'Verify Honda-specified gear oil',qty:'Verify capacity',aftermarket:'',notes:'Exact lubricant/capacity to be entered from exact model manual.'}
+ ]});
+ add('2007 Honda Recon 250','Rear final gear case oil change',{months:24,
+   notes:'Honda factory schedule: replace rear final gear case oil every 2 years.'});
+ add('2007 Honda Recon 250','Brake fluid inspection',{miles:600,hours:100,
+   notes:'Honda schedule includes brake-fluid inspection; replacement interval is every 2 years where applicable.'});
+ add('2007 Honda Recon 250','Brake fluid replacement',{months:24,
+   notes:'Honda maintenance note: replace brake fluid every 2 years. Mechanical skill is required.',parts:[
+   {description:'Brake fluid',oem:'Honda-specified brake fluid — verify exact DOT spec',qty:'As required',aftermarket:'',notes:'Exact specification to be confirmed from the model manual.'}
+ ]});
+ add('2007 Honda Recon 250','Brake system / wear inspection',{miles:600,hours:100,
+   notes:'Inspect brake shoe/pad wear, brake-light switch and brake system at scheduled intervals; more often in mud/wet use.'});
+ add('2007 Honda Recon 250','Reverse lock system inspection',{miles:600,hours:100,
+   notes:'Honda factory maintenance item: inspect reverse lock system.'});
+ add('2007 Honda Recon 250','Suspension & steering inspection',{miles:600,hours:100,
+   notes:'Honda factory maintenance items include suspension, steering shaft holder bearing and steering system inspection/lubrication as specified.'});
+ add('2007 Honda Recon 250','Spark arrester cleaning',{miles:600,hours:100,
+   notes:'Honda factory maintenance item: inspect/clean spark arrester at regular interval.'});
+
+ // Mahindra 4530 4WD — 30 Series operator manual schedule.
+ add('2006 Mahindra 4530','Engine oil & filter',{hours:250,
+   notes:'Mahindra factory: initial engine oil/filter at 100 hr on a new/overhauled engine; thereafter every 250 hr. Change oil if tractor is unused for 6 months.',parts:[
+   {description:'Diesel engine oil',oem:'SAE 15W-40; MIL-L-2104E class per manual',qty:'Verify sump capacity',aftermarket:'Citgo Citgard 500 / Exxon XD3 Extra / Chevron Delo 400 / Mobil Delvac 1300 / Shell Rotella T / Texaco Ursa Super Plus 15W-40',notes:'Manual lists these 15W-40 examples for approximately -15°C to 50°C ambient range.'},
+   {description:'Spin-on engine oil filter',oem:'Verify Mahindra OEM part #',qty:'1',aftermarket:'',notes:'Prime new filter with clean oil; exact part number to be verified.'}
+ ]});
+ add('2006 Mahindra 4530','Check engine oil level',{hours:10,
+   notes:'Mahindra routine schedule: check engine oil level daily / approximately every 10 operating hours and top up as necessary.'});
+ add('2006 Mahindra 4530','Drain water from fuel filters',{hours:50,
+   notes:'Mahindra manual text: drain dirt/water from fuel-filter points every 50 operating hours; routine chart also calls for periodic draining.'});
+ add('2006 Mahindra 4530','Replace primary fuel filter',{hours:250,
+   notes:'Mahindra factory: replace primary-stage paper fuel-filter insert every 250 hr or earlier if required.',parts:[
+   {description:'Primary fuel filter element',oem:'Verify Mahindra OEM part #',qty:'1',aftermarket:'',notes:'Paper insert; do not clean/reuse.'}
+ ]});
+ add('2006 Mahindra 4530','Replace secondary fuel filter',{hours:500,
+   notes:'Mahindra factory: replace secondary-stage paper fuel-filter insert every 500 hr or earlier if required.',parts:[
+   {description:'Secondary fuel filter element',oem:'Verify Mahindra OEM part #',qty:'1',aftermarket:'',notes:'Paper insert; do not clean/reuse.'}
+ ]});
+ add('2006 Mahindra 4530','Clean air-cleaner dust collector',{hours:10,
+   notes:'Mahindra routine schedule: clean air-cleaner dust collector daily; shorten interval in dusty work.'});
+ add('2006 Mahindra 4530','Clean primary air-cleaner element',{hours:300,
+   notes:'Mahindra routine schedule: clean primary air-cleaner element every 300 hr; service sooner for restriction/dust.'});
+ add('2006 Mahindra 4530','Replace primary air-cleaner element',{hours:900,
+   notes:'Mahindra routine schedule: replace primary element every 900 hr (manual also indicates replacement after limited cleanings).',parts:[
+   {description:'Primary air filter element',oem:'Verify Mahindra OEM part #',qty:'1',aftermarket:'',notes:'Exact part number pending OEM parts lookup.'}
+ ]});
+ add('2006 Mahindra 4530','Replace air-cleaner safety cartridge',{hours:900,
+   notes:'Mahindra routine schedule: replace safety cartridge every 900 hr.',parts:[
+   {description:'Air cleaner safety element',oem:'Verify Mahindra OEM part #',qty:'1',aftermarket:'',notes:'Exact part number pending OEM parts lookup.'}
+ ]});
+ add('2006 Mahindra 4530','Cooling system / fan belt inspection',{hours:250,
+   notes:'Mahindra schedule: check coolant, radiator hose connections and fan-belt tension; recurring service at 250 hr. Belt deflection guidance is about 3/8–1/2 in midway between pulleys.'});
+ add('2006 Mahindra 4530','Flush cooling system',{hours:1000,
+   notes:'Mahindra routine schedule: flush cooling system every 1,000 hr.',parts:[
+   {description:'Coolant',oem:'Verify Mahindra coolant specification',qty:'Verify cooling-system capacity',aftermarket:'',notes:'Do not mix incompatible coolant types.'}
+ ]});
+ add('2006 Mahindra 4530','Clean battery terminals',{hours:250,
+   notes:'Mahindra routine schedule: clean battery terminals every 250 hr.'});
+ add('2006 Mahindra 4530','Transmission / hydraulic oil level check',{hours:250,
+   notes:'Mahindra routine schedule: check common transmission/hydraulic/steering reservoir level and top up as necessary.'});
+ add('2006 Mahindra 4530','Transmission oil change & strainer cleaning',{hours:1000,
+   notes:'Mahindra routine schedule: change transmission oil and clean strainer during oil change; exact initial-service requirement should also be observed.',parts:[
+   {description:'Transmission / hydraulic oil',oem:'Verify Mahindra specification',qty:'Verify reservoir capacity',aftermarket:'',notes:'Common reservoir serves transmission, hydraulics and steering.'}
+ ]});
+ add('2006 Mahindra 4530','Hydraulic suction strainer cleaning',{hours:600,
+   notes:'Mahindra routine schedule: clean hydraulic suction strainer every 600 hr.'});
+ add('2006 Mahindra 4530','Hydraulic orifice filter cleaning',{hours:600,
+   notes:'Mahindra routine schedule: clean hydraulic orifice filter every 600 hr.'});
+ add('2006 Mahindra 4530','Hydraulic suction filter replacement',{hours:500,
+   notes:'Routine chart shows recurring suction-filter service; manual text states suction filter element replacement every 600 hr or whenever transmission oil is changed. Use the more conservative due reminder until exact serial/manual interpretation is finalized.',parts:[
+   {description:'Hydraulic suction filter element',oem:'Verify Mahindra OEM part #',qty:'1',aftermarket:'',notes:'Manual text explicitly states replacement every 600 hr or with transmission oil change.'}
+ ]});
+ add('2006 Mahindra 4530','Brake inspection & adjustment',{hours:250,
+   notes:'Mahindra routine schedule: check and adjust brakes based on conditions; recurring chart service at 250 hr.'});
+ add('2006 Mahindra 4530','Steering / toe-in / grease inspection',{hours:500,
+   notes:'Mahindra routine schedule includes steering wheel play, toe-in and lubrication of grease points. Greasing frequency also depends on operating conditions.'});
+ add('2006 Mahindra 4530','Front axle oil level check',{hours:250,
+   notes:'Mahindra routine schedule: check front axle oil level and top up as necessary.'});
+ add('2006 Mahindra 4530','Front axle oil change',{hours:1000,
+   notes:'Mahindra routine schedule: change front axle oil every 1,000 hr.',parts:[
+   {description:'Front axle lubricant',oem:'Verify Mahindra specification',qty:'Verify capacity',aftermarket:'',notes:'Exact lubricant/capacity pending operator-manual specification lookup.'}
+ ]});
+ add('2006 Mahindra 4530','Front axle bearing grease',{hours:600,
+   notes:'Mahindra manual: grease front axle bearing grease nipple every 600 operating hours.',parts:[
+   {description:'Grease',oem:'Verify Mahindra grease specification',qty:'As needed',aftermarket:'',notes:''}
+ ]});
+ add('2006 Mahindra 4530','Valve clearance / cylinder head torque',{hours:1000,
+   notes:'Mahindra routine schedule includes cylinder-head bolt torque and valve-clearance service at 1,000 hr.'});
+ add('2006 Mahindra 4530','Injector pressure inspection',{hours:1000,
+   notes:'Mahindra routine schedule: check/adjust injector pressure every 1,000 hr; appropriate diesel service equipment is required.'});
+
+ localStorage.setItem(KEY,'1');
+ localStorage.setItem(TK,JSON.stringify(tasks));
+})();
+
 localStorage.setItem(AK,JSON.stringify(assets));localStorage.setItem(TK,JSON.stringify(tasks));localStorage.setItem(HK,JSON.stringify(history));
 
 const $=x=>document.getElementById(x);
