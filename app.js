@@ -1,0 +1,32 @@
+const STORAGE_KEY='maintenancePlannerTasksV1';
+const $=id=>document.getElementById(id);
+const today=()=>new Date(new Date().setHours(0,0,0,0));
+const iso=d=>d.toISOString().slice(0,10);
+const addDays=(n)=>{const d=today();d.setDate(d.getDate()+n);return iso(d)};
+const demo=()=>[
+ {id:crypto.randomUUID(),name:'Change HVAC filter',category:'HVAC & Filters',equipment:'Main HVAC unit',lastCompleted:addDays(-70),nextDue:addDays(-10),intervalValue:60,intervalUnit:'days',partNumber:'20x25x1 filter',notes:'Check return grille while changing filter',cost:18,meterValue:''},
+ {id:crypto.randomUUID(),name:'Inspect garage door & lubricate rollers',category:'Home',equipment:'Garage door',lastCompleted:addDays(-150),nextDue:addDays(5),intervalValue:6,intervalUnit:'months',partNumber:'Garage door lubricant',notes:'Inspect cables, rollers and visible spring condition',cost:'',meterValue:''},
+ {id:crypto.randomUUID(),name:'Mower oil & filter service',category:'Lawn & Outdoor',equipment:'Zero-turn mower',lastCompleted:addDays(-250),nextDue:addDays(22),intervalValue:1,intervalUnit:'years',partNumber:'Record oil/filter numbers here',notes:'Also inspect blades and deck belt',cost:'',meterValue:50},
+ {id:crypto.randomUUID(),name:'Inspect metal roof',category:'Home',equipment:'House roof',lastCompleted:addDays(-300),nextDue:addDays(80),intervalValue:1,intervalUnit:'years',partNumber:'',notes:'Check fasteners, sealant, flashing and storm damage',cost:'',meterValue:''},
+ {id:crypto.randomUUID(),name:'Polaris Ranger service check',category:'Vehicles & UTV',equipment:'2020 Polaris Ranger 1000',lastCompleted:addDays(-120),nextDue:addDays(35),intervalValue:6,intervalUnit:'months',partNumber:'',notes:'Oil, filters, belt/clutches, fluids and tire pressure',cost:'',meterValue:100}
+];
+let tasks=load();
+function load(){try{const x=JSON.parse(localStorage.getItem(STORAGE_KEY));return Array.isArray(x)&&x.length?x:demo()}catch{return demo()}}
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(tasks));render()}
+function status(t){const diff=Math.ceil((new Date(t.nextDue+'T00:00:00')-today())/86400000);if(diff<0)return'overdue';if(diff<=30)return'soon';return'upcoming'}
+function fmt(s){return new Date(s+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}
+function esc(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function render(){
+ const q=$('searchInput').value.toLowerCase(),cat=$('categoryFilter').value,st=$('statusFilter').value;
+ const filtered=tasks.filter(t=>(cat==='all'||t.category===cat)&&(st==='all'||status(t)===st)&&[t.name,t.category,t.equipment,t.partNumber,t.notes].join(' ').toLowerCase().includes(q)).sort((a,b)=>a.nextDue.localeCompare(b.nextDue));
+ $('taskList').innerHTML=filtered.map(t=>`<article class="task"><div class="task-main"><span class="status-dot ${status(t)}"></span><div><h3>${esc(t.name)}</h3><p class="meta">${esc(t.equipment||t.category)} · Due ${fmt(t.nextDue)}</p><div class="chips"><span class="chip">${esc(t.category)}</span>${t.intervalValue>0?`<span class="chip">Every ${t.intervalValue} ${esc(t.intervalUnit)}</span>`:''}${t.partNumber?`<span class="chip">${esc(t.partNumber)}</span>`:''}${t.cost?`<span class="chip">$${Number(t.cost).toFixed(2)}</span>`:''}</div></div></div><div class="task-actions"><button class="complete-btn" onclick="completeTask('${t.id}')">✓ Complete</button><button class="edit-btn" onclick="editTask('${t.id}')">Edit</button></div></article>`).join('');
+ $('emptyState').classList.toggle('hidden',filtered.length!==0);
+ const counts={overdue:0,soon:0,upcoming:0};tasks.forEach(t=>counts[status(t)]++);$('overdueCount').textContent=counts.overdue;$('dueSoonCount').textContent=counts.soon;$('upcomingCount').textContent=counts.upcoming;$('completedCount').textContent=JSON.parse(localStorage.getItem('maintenanceCompletedCount')||'0');
+}
+function openForm(t=null){$('taskForm').reset();$('taskId').value=t?.id||'';$('dialogTitle').textContent=t?'Edit Maintenance Task':'Add Maintenance Task';$('deleteTaskBtn').classList.toggle('hidden',!t);if(t){['taskName','taskCategory','taskEquipment','lastCompleted','nextDue','intervalValue','intervalUnit','meterValue','taskCost','partNumber','taskNotes'].forEach(id=>{const key={taskName:'name',taskCategory:'category',taskEquipment:'equipment',taskCost:'cost',taskNotes:'notes'}[id]||id;$(id).value=t[key]??''})}else{$('nextDue').value=iso(today());$('intervalValue').value=0}$('taskDialog').showModal()}
+function editTask(id){openForm(tasks.find(t=>t.id===id))}
+function completeTask(id){const t=tasks.find(x=>x.id===id);if(!t)return;t.lastCompleted=iso(today());let d=today(),n=Number(t.intervalValue)||0;if(n){if(t.intervalUnit==='days')d.setDate(d.getDate()+n);if(t.intervalUnit==='months')d.setMonth(d.getMonth()+n);if(t.intervalUnit==='years')d.setFullYear(d.getFullYear()+n);t.nextDue=iso(d)}else{d.setFullYear(d.getFullYear()+1);t.nextDue=iso(d)}localStorage.setItem('maintenanceCompletedCount',String(Number(localStorage.getItem('maintenanceCompletedCount')||0)+1));save()}
+$('taskForm').addEventListener('submit',e=>{e.preventDefault();const id=$('taskId').value;const obj={id:id||crypto.randomUUID(),name:$('taskName').value.trim(),category:$('taskCategory').value,equipment:$('taskEquipment').value.trim(),lastCompleted:$('lastCompleted').value,nextDue:$('nextDue').value,intervalValue:Number($('intervalValue').value)||0,intervalUnit:$('intervalUnit').value,meterValue:$('meterValue').value,cost:$('taskCost').value,partNumber:$('partNumber').value.trim(),notes:$('taskNotes').value.trim()};if(id)tasks=tasks.map(t=>t.id===id?obj:t);else tasks.push(obj);save();$('taskDialog').close()});
+$('deleteTaskBtn').onclick=()=>{const id=$('taskId').value;if(id&&confirm('Delete this maintenance task?')){tasks=tasks.filter(t=>t.id!==id);save();$('taskDialog').close()}};
+$('addTaskBtn').onclick=()=>openForm();$('closeDialogBtn').onclick=$('cancelBtn').onclick=()=>$('taskDialog').close();['searchInput','categoryFilter','statusFilter'].forEach(id=>$(id).addEventListener('input',render));$('resetDemoBtn').onclick=()=>{if(confirm('Replace your current tasks with the starter demo tasks?')){tasks=demo();localStorage.setItem('maintenanceCompletedCount','0');save()}};
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});save();
