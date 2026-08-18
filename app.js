@@ -349,6 +349,82 @@ if(localStorage.getItem(MIG)!=='1'){
  localStorage.setItem(TK,JSON.stringify(tasks));
 })();
 
+
+// OEM Parts Fix 2 — resilient matching/creation for Honda and Mahindra tasks.
+// Preserves all meter readings and existing service history.
+(function(){
+ const KEY='hmv2-oem-parts-fix-2';
+ if(localStorage.getItem(KEY)==='1') return;
+
+ const norm=s=>(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+ const assetMatch=(t,asset)=>norm(t.asset)===norm(asset);
+ const findBy=(asset,keywords)=>{
+   const ks=keywords.map(norm);
+   return tasks.find(t=>assetMatch(t,asset)&&ks.every(k=>norm(t.name).includes(k)));
+ };
+ const ensure=(asset,name,keywords,data={})=>{
+   let t=findBy(asset,keywords);
+   if(!t){
+     t={id:uid(),asset,name,dueDate:'',months:0,miles:0,hours:0,notes:'',parts:[]};
+     tasks.push(t);
+   }
+   Object.assign(t,data);
+   if(!Array.isArray(t.parts))t.parts=[];
+   return t;
+ };
+ const setParts=(t,parts)=>{t.parts=parts};
+
+ // ----- Mahindra 4530 -----
+ let t=ensure('2006 Mahindra 4530','Engine oil & filter',['oil'],{
+   hours:250,
+   notes:'Mahindra factory: initial engine oil/filter at 100 hr on a new/overhauled engine; thereafter every 250 hr. Use 15W-40 diesel engine oil meeting the manual requirement.'
+ });
+ setParts(t,[
+   {description:'Engine oil filter',oem:'000020316E05',qty:'1',aftermarket:'',notes:'Mahindra OEM; supersedes 006008549C1. Listed for 4530.'},
+   {description:'15W-40 diesel engine oil',oem:'MV15W401G',qty:'As required',aftermarket:'',notes:'Mahindra 15W-40 diesel oil package number.'},
+   {description:'Oil drain plug sealing washer',oem:'000020286E05',qty:'1',aftermarket:'',notes:'Mahindra OEM sealing washer listed for 4530.'}
+ ]);
+
+ t=ensure('2006 Mahindra 4530','Replace primary fuel filter',['primary','fuel'],{hours:250,notes:'Replace primary fuel-filter element every 250 hr or earlier if required.'});
+ setParts(t,[{description:'Primary fuel filter',oem:'006006648D1',qty:'1',aftermarket:'',notes:'Mahindra OEM listed for 4530.'}]);
+
+ t=ensure('2006 Mahindra 4530','Replace secondary fuel filter',['secondary','fuel'],{hours:500,notes:'Replace secondary fuel-filter element every 500 hr or earlier if required.'});
+ setParts(t,[{description:'Secondary fuel filter',oem:'001081778R93',qty:'1',aftermarket:'',notes:'Mahindra OEM listed for 4530.'}]);
+
+ t=ensure('2006 Mahindra 4530','Replace primary air-cleaner element',['air'],{hours:900,notes:'Replace primary outer air-filter element at the factory interval or sooner if damaged/restriction is high.'});
+ setParts(t,[
+   {description:'Primary / outer air filter',oem:'006008799F1',qty:'1',aftermarket:'',notes:'Mahindra OEM listed for 4530.'},
+   {description:'Secondary / inner air filter',oem:'006000456F1',qty:'1 as needed',aftermarket:'',notes:'Mahindra OEM inner/safety element listed for 4530.'}
+ ]);
+
+ t=ensure('2006 Mahindra 4530','Hydraulic oil & filter service',['hydraulic'],{hours:600,notes:'Service hydraulic/transmission filtration and suction components at the operator-manual interval.'});
+ setParts(t,[
+   {description:'Hydraulic oil filter',oem:'000013427P04',qty:'1',aftermarket:'',notes:'Mahindra OEM filter; fitment listing includes 4530.'},
+   {description:'Hydraulic suction strainer',oem:'000013701P04',qty:'1 as needed',aftermarket:'',notes:'Mahindra OEM suction strainer listed for 4530.'},
+   {description:'Suction strainer gasket',oem:'007201350C1',qty:'1 as needed',aftermarket:'',notes:'Mahindra OEM gasket listed for 4530.'},
+   {description:'Universal 3 transmission/hydraulic fluid',oem:'MVUTF1G',qty:'As required',aftermarket:'',notes:'Mahindra Universal 3 / MUTTO-type fluid package number.'}
+ ]);
+
+ t=ensure('2006 Mahindra 4530','Cooling system / fan belt inspection',['belt'],{hours:250,notes:'Inspect coolant system and fan-belt condition/tension.'});
+ setParts(t,[{description:'Fan belt',oem:'000020325E05',qty:'1 as needed',aftermarket:'',notes:'Mahindra OEM fan belt listed for 4530.'}]);
+
+ // ----- Honda Recon 250 -----
+ t=ensure('2007 Honda Recon 250','Air cleaner service',['air'],{miles:600,hours:100,notes:'Honda factory service point: inspect/clean air cleaner; service more often in dust/mud.'});
+ setParts(t,[{description:'Air cleaner element',oem:'17254-HM8-000',qty:'1',aftermarket:'',notes:'Honda OEM air cleaner element for Recon family application.'}]);
+
+ t=ensure('2007 Honda Recon 250','Spark plug inspection',['spark'],{miles:600,hours:100,notes:'Honda factory inspection interval. Replace as needed.'});
+ setParts(t,[{description:'Spark plug',oem:'98069-58916',qty:'1',aftermarket:'NGK DPR8EA-9',notes:'Honda standard plug listing.'}]);
+
+ t=ensure('2007 Honda Recon 250','Engine oil service',['oil'],{months:12,miles:600,hours:100,notes:'Honda factory regular interval: 600 mi / 100 hr / 12 months, whichever comes first.'});
+ setParts(t,[{description:'4-stroke engine oil',oem:'Honda GN4 or manual-equivalent specification',qty:'Verify exact capacity',aftermarket:'',notes:'Recon service uses scheduled strainer/centrifugal-filter cleaning; no spin-on oil filter assigned here.'}]);
+
+ // Make sure every OEM-updated task has a visible Parts & Supplies array.
+ tasks.forEach(x=>{if(!Array.isArray(x.parts))x.parts=[]});
+
+ localStorage.setItem(TK,JSON.stringify(tasks));
+ localStorage.setItem(KEY,'1');
+})();
+
 localStorage.setItem(AK,JSON.stringify(assets));localStorage.setItem(TK,JSON.stringify(tasks));localStorage.setItem(HK,JSON.stringify(history));
 
 const $=x=>document.getElementById(x);
