@@ -1,4 +1,5 @@
 const STORAGE_KEY='maintenancePlannerTasksV1';
+const EQUIPMENT_KEY='maintenancePlannerEquipmentV1';
 const $=id=>document.getElementById(id);
 const today=()=>new Date(new Date().setHours(0,0,0,0));
 const iso=d=>d.toISOString().slice(0,10);
@@ -6,27 +7,95 @@ const addDays=(n)=>{const d=today();d.setDate(d.getDate()+n);return iso(d)};
 const demo=()=>[
  {id:crypto.randomUUID(),name:'Change HVAC filter',category:'HVAC & Filters',equipment:'Main HVAC unit',lastCompleted:addDays(-70),nextDue:addDays(-10),intervalValue:60,intervalUnit:'days',partNumber:'20x25x1 filter',notes:'Check return grille while changing filter',cost:18,meterValue:''},
  {id:crypto.randomUUID(),name:'Inspect garage door & lubricate rollers',category:'Home',equipment:'Garage door',lastCompleted:addDays(-150),nextDue:addDays(5),intervalValue:6,intervalUnit:'months',partNumber:'Garage door lubricant',notes:'Inspect cables, rollers and visible spring condition',cost:'',meterValue:''},
- {id:crypto.randomUUID(),name:'Mower oil & filter service',category:'Lawn & Outdoor',equipment:'Zero-turn mower',lastCompleted:addDays(-250),nextDue:addDays(22),intervalValue:1,intervalUnit:'years',partNumber:'Record oil/filter numbers here',notes:'Also inspect blades and deck belt',cost:'',meterValue:50},
+ {id:crypto.randomUUID(),name:'Mower oil & filter service',category:'Lawn & Outdoor',equipment:'Zero-Turn Mower',lastCompleted:addDays(-250),nextDue:addDays(22),intervalValue:1,intervalUnit:'years',partNumber:'Record oil/filter numbers here',notes:'Also inspect blades and deck belt',cost:'',meterValue:50},
  {id:crypto.randomUUID(),name:'Inspect metal roof',category:'Home',equipment:'House roof',lastCompleted:addDays(-300),nextDue:addDays(80),intervalValue:1,intervalUnit:'years',partNumber:'',notes:'Check fasteners, sealant, flashing and storm damage',cost:'',meterValue:''},
  {id:crypto.randomUUID(),name:'Polaris Ranger service check',category:'Vehicles & UTV',equipment:'2020 Polaris Ranger 1000',lastCompleted:addDays(-120),nextDue:addDays(35),intervalValue:6,intervalUnit:'months',partNumber:'',notes:'Oil, filters, belt/clutches, fluids and tire pressure',cost:'',meterValue:100}
 ];
-let tasks=load();
-function load(){try{const x=JSON.parse(localStorage.getItem(STORAGE_KEY));return Array.isArray(x)&&x.length?x:demo()}catch{return demo()}}
-function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(tasks));render()}
+const starterEquipment=()=>[
+ {id:crypto.randomUUID(),name:'2020 Polaris Ranger 1000',type:'UTV / ATV',year:2020,make:'Polaris',model:'Ranger 1000',meter:'',meterType:'hours',serial:'',notes:'Track oil, filters, drive belt, clutch service, fluids and tires here.'},
+ {id:crypto.randomUUID(),name:'Zero-Turn Mower',type:'Mower',year:'',make:'',model:'',meter:'',meterType:'hours',serial:'',notes:'Track engine hours, oil/filter service, blades, deck belt and tire pressure.'}
+];
+let tasks=loadTasks();
+let equipment=loadEquipment();
+let currentView='maintenance';
+
+function loadTasks(){try{const x=JSON.parse(localStorage.getItem(STORAGE_KEY));return Array.isArray(x)&&x.length?x:demo()}catch{return demo()}}
+function loadEquipment(){try{const x=JSON.parse(localStorage.getItem(EQUIPMENT_KEY));return Array.isArray(x)&&x.length?x:starterEquipment()}catch{return starterEquipment()}}
+function saveTasks(){localStorage.setItem(STORAGE_KEY,JSON.stringify(tasks));renderTasks();renderEquipment();}
+function saveEquipment(){localStorage.setItem(EQUIPMENT_KEY,JSON.stringify(equipment));renderEquipment();populateEquipmentSelect();}
 function status(t){const diff=Math.ceil((new Date(t.nextDue+'T00:00:00')-today())/86400000);if(diff<0)return'overdue';if(diff<=30)return'soon';return'upcoming'}
-function fmt(s){return new Date(s+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}
+function fmt(s){return s?new Date(s+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'—'}
 function esc(s=''){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-function render(){
+function iconFor(type=''){if(type.includes('Mower'))return'🌱';if(type.includes('UTV')||type.includes('ATV'))return'🛞';if(type.includes('Tractor'))return'🚜';if(type.includes('Generator'))return'⚡';if(type.includes('Trailer'))return'🛻';if(type.includes('Tool'))return'🧰';if(type.includes('Appliance'))return'🏠';return'⚙️'}
+
+function renderTasks(){
  const q=$('searchInput').value.toLowerCase(),cat=$('categoryFilter').value,st=$('statusFilter').value;
  const filtered=tasks.filter(t=>(cat==='all'||t.category===cat)&&(st==='all'||status(t)===st)&&[t.name,t.category,t.equipment,t.partNumber,t.notes].join(' ').toLowerCase().includes(q)).sort((a,b)=>a.nextDue.localeCompare(b.nextDue));
  $('taskList').innerHTML=filtered.map(t=>`<article class="task"><div class="task-main"><span class="status-dot ${status(t)}"></span><div><h3>${esc(t.name)}</h3><p class="meta">${esc(t.equipment||t.category)} · Due ${fmt(t.nextDue)}</p><div class="chips"><span class="chip">${esc(t.category)}</span>${t.intervalValue>0?`<span class="chip">Every ${t.intervalValue} ${esc(t.intervalUnit)}</span>`:''}${t.partNumber?`<span class="chip">${esc(t.partNumber)}</span>`:''}${t.cost?`<span class="chip">$${Number(t.cost).toFixed(2)}</span>`:''}</div></div></div><div class="task-actions"><button class="complete-btn" onclick="completeTask('${t.id}')">✓ Complete</button><button class="edit-btn" onclick="editTask('${t.id}')">Edit</button></div></article>`).join('');
  $('emptyState').classList.toggle('hidden',filtered.length!==0);
  const counts={overdue:0,soon:0,upcoming:0};tasks.forEach(t=>counts[status(t)]++);$('overdueCount').textContent=counts.overdue;$('dueSoonCount').textContent=counts.soon;$('upcomingCount').textContent=counts.upcoming;$('completedCount').textContent=JSON.parse(localStorage.getItem('maintenanceCompletedCount')||'0');
 }
-function openForm(t=null){$('taskForm').reset();$('taskId').value=t?.id||'';$('dialogTitle').textContent=t?'Edit Maintenance Task':'Add Maintenance Task';$('deleteTaskBtn').classList.toggle('hidden',!t);if(t){['taskName','taskCategory','taskEquipment','lastCompleted','nextDue','intervalValue','intervalUnit','meterValue','taskCost','partNumber','taskNotes'].forEach(id=>{const key={taskName:'name',taskCategory:'category',taskEquipment:'equipment',taskCost:'cost',taskNotes:'notes'}[id]||id;$(id).value=t[key]??''})}else{$('nextDue').value=iso(today());$('intervalValue').value=0}$('taskDialog').showModal()}
-function editTask(id){openForm(tasks.find(t=>t.id===id))}
-function completeTask(id){const t=tasks.find(x=>x.id===id);if(!t)return;t.lastCompleted=iso(today());let d=today(),n=Number(t.intervalValue)||0;if(n){if(t.intervalUnit==='days')d.setDate(d.getDate()+n);if(t.intervalUnit==='months')d.setMonth(d.getMonth()+n);if(t.intervalUnit==='years')d.setFullYear(d.getFullYear()+n);t.nextDue=iso(d)}else{d.setFullYear(d.getFullYear()+1);t.nextDue=iso(d)}localStorage.setItem('maintenanceCompletedCount',String(Number(localStorage.getItem('maintenanceCompletedCount')||0)+1));save()}
-$('taskForm').addEventListener('submit',e=>{e.preventDefault();const id=$('taskId').value;const obj={id:id||crypto.randomUUID(),name:$('taskName').value.trim(),category:$('taskCategory').value,equipment:$('taskEquipment').value.trim(),lastCompleted:$('lastCompleted').value,nextDue:$('nextDue').value,intervalValue:Number($('intervalValue').value)||0,intervalUnit:$('intervalUnit').value,meterValue:$('meterValue').value,cost:$('taskCost').value,partNumber:$('partNumber').value.trim(),notes:$('taskNotes').value.trim()};if(id)tasks=tasks.map(t=>t.id===id?obj:t);else tasks.push(obj);save();$('taskDialog').close()});
-$('deleteTaskBtn').onclick=()=>{const id=$('taskId').value;if(id&&confirm('Delete this maintenance task?')){tasks=tasks.filter(t=>t.id!==id);save();$('taskDialog').close()}};
-$('addTaskBtn').onclick=()=>openForm();$('closeDialogBtn').onclick=$('cancelBtn').onclick=()=>$('taskDialog').close();['searchInput','categoryFilter','statusFilter'].forEach(id=>$(id).addEventListener('input',render));$('resetDemoBtn').onclick=()=>{if(confirm('Replace your current tasks with the starter demo tasks?')){tasks=demo();localStorage.setItem('maintenanceCompletedCount','0');save()}};
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});save();
+
+function renderEquipment(){
+ $('equipmentCount').textContent=equipment.length;
+ $('equipmentWithTasksCount').textContent=equipment.filter(e=>tasks.some(t=>t.equipment===e.name)).length;
+ $('equipmentList').innerHTML=equipment.map(e=>{
+   const linked=tasks.filter(t=>t.equipment===e.name);
+   const next=linked.slice().sort((a,b)=>a.nextDue.localeCompare(b.nextDue))[0];
+   return `<article class="equipment-card"><div class="equipment-card-head"><div class="equipment-title"><div class="equipment-icon">${iconFor(e.type)}</div><div><h3>${esc(e.name)}</h3><p class="meta">${esc([e.year,e.make,e.model].filter(Boolean).join(' ')||e.type)}</p></div></div><button class="edit-btn" onclick="editEquipment('${e.id}')">Edit</button></div><div class="equipment-specs"><div class="spec"><span>Meter</span><strong>${e.meter!==''?`${esc(e.meter)} ${e.meterType==='miles'?'mi':e.meterType==='hours'?'hr':''}`:'Not set'}</strong></div><div class="spec"><span>Next service</span><strong>${next?fmt(next.nextDue):'No task'}</strong></div></div>${e.serial?`<p class="meta">Serial / VIN: ${esc(e.serial)}</p>`:''}${e.notes?`<p class="equipment-note">${esc(e.notes)}</p>`:''}<p class="linked-count">${linked.length} maintenance task${linked.length===1?'':'s'} linked</p><div class="equipment-card-actions"><button class="primary" onclick="addTaskForEquipment('${e.id}')">+ Maintenance</button><button class="edit-btn" onclick="showEquipmentTasks('${e.id}')">View Tasks</button></div></article>`
+ }).join('');
+ $('equipmentEmptyState').classList.toggle('hidden',equipment.length!==0);
+}
+
+function populateEquipmentSelect(selected=''){
+ const select=$('taskEquipment');
+ if(!select)return;
+ const current=selected||select.value;
+ select.innerHTML='<option value="">None / other area</option>'+equipment.map(e=>`<option value="${esc(e.name)}">${esc(e.name)}</option>`).join('');
+ if(current&&!equipment.some(e=>e.name===current)){const o=document.createElement('option');o.value=current;o.textContent=current+' (unlisted)';select.appendChild(o)}
+ select.value=current;
+}
+
+function switchView(view){
+ currentView=view;
+ $('maintenanceView').classList.toggle('hidden',view!=='maintenance');
+ $('equipmentView').classList.toggle('hidden',view!=='equipment');
+ document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+ $('headerActionBtn').textContent=view==='equipment'?'+ Add Equipment':'+ Add Task';
+}
+
+function openTaskForm(t=null,presetEquipment=''){
+ $('taskForm').reset();$('taskId').value=t?.id||'';$('dialogTitle').textContent=t?'Edit Maintenance Task':'Add Maintenance Task';$('deleteTaskBtn').classList.toggle('hidden',!t);
+ populateEquipmentSelect(t?.equipment||presetEquipment);
+ if(t){['taskName','taskCategory','lastCompleted','nextDue','intervalValue','intervalUnit','meterValue','taskCost','partNumber','taskNotes'].forEach(id=>{const key={taskName:'name',taskCategory:'category',taskCost:'cost',taskNotes:'notes'}[id]||id;$(id).value=t[key]??''});$('taskEquipment').value=t.equipment||''}
+ else{$('nextDue').value=iso(today());$('intervalValue').value=0;if(presetEquipment){$('taskEquipment').value=presetEquipment;const e=equipment.find(x=>x.name===presetEquipment);$('taskCategory').value=e?.type==='Mower'?'Lawn & Outdoor':e?.type==='UTV / ATV'?'Vehicles & UTV':'Property'}}
+ $('taskDialog').showModal();
+}
+function editTask(id){openTaskForm(tasks.find(t=>t.id===id))}
+function completeTask(id){const t=tasks.find(x=>x.id===id);if(!t)return;t.lastCompleted=iso(today());let d=today(),n=Number(t.intervalValue)||0;if(n){if(t.intervalUnit==='days')d.setDate(d.getDate()+n);if(t.intervalUnit==='months')d.setMonth(d.getMonth()+n);if(t.intervalUnit==='years')d.setFullYear(d.getFullYear()+n);t.nextDue=iso(d)}else{d.setFullYear(d.getFullYear()+1);t.nextDue=iso(d)}localStorage.setItem('maintenanceCompletedCount',String(Number(localStorage.getItem('maintenanceCompletedCount')||0)+1));saveTasks()}
+
+function openEquipmentForm(e=null){
+ $('equipmentForm').reset();$('equipmentId').value=e?.id||'';$('equipmentDialogTitle').textContent=e?'Edit Equipment':'Add Equipment';$('deleteEquipmentBtn').classList.toggle('hidden',!e);
+ if(e){$('equipmentName').value=e.name||'';$('equipmentType').value=e.type||'Other';$('equipmentYear').value=e.year||'';$('equipmentMake').value=e.make||'';$('equipmentModel').value=e.model||'';$('equipmentMeter').value=e.meter??'';$('equipmentMeterType').value=e.meterType||'hours';$('equipmentSerial').value=e.serial||'';$('equipmentNotes').value=e.notes||''}
+ $('equipmentDialog').showModal();
+}
+function editEquipment(id){openEquipmentForm(equipment.find(e=>e.id===id))}
+function addTaskForEquipment(id){const e=equipment.find(x=>x.id===id);if(e){switchView('maintenance');openTaskForm(null,e.name)}}
+function showEquipmentTasks(id){const e=equipment.find(x=>x.id===id);if(!e)return;switchView('maintenance');$('searchInput').value=e.name;$('categoryFilter').value='all';$('statusFilter').value='all';renderTasks()}
+
+$('taskForm').addEventListener('submit',e=>{e.preventDefault();const id=$('taskId').value;const obj={id:id||crypto.randomUUID(),name:$('taskName').value.trim(),category:$('taskCategory').value,equipment:$('taskEquipment').value,lastCompleted:$('lastCompleted').value,nextDue:$('nextDue').value,intervalValue:Number($('intervalValue').value)||0,intervalUnit:$('intervalUnit').value,meterValue:$('meterValue').value,cost:$('taskCost').value,partNumber:$('partNumber').value.trim(),notes:$('taskNotes').value.trim()};if(id)tasks=tasks.map(t=>t.id===id?obj:t);else tasks.push(obj);saveTasks();$('taskDialog').close()});
+$('deleteTaskBtn').onclick=()=>{const id=$('taskId').value;if(id&&confirm('Delete this maintenance task?')){tasks=tasks.filter(t=>t.id!==id);saveTasks();$('taskDialog').close()}};
+
+$('equipmentForm').addEventListener('submit',e=>{e.preventDefault();const id=$('equipmentId').value;const old=equipment.find(x=>x.id===id);const obj={id:id||crypto.randomUUID(),name:$('equipmentName').value.trim(),type:$('equipmentType').value,year:$('equipmentYear').value,make:$('equipmentMake').value.trim(),model:$('equipmentModel').value.trim(),meter:$('equipmentMeter').value,meterType:$('equipmentMeterType').value,serial:$('equipmentSerial').value.trim(),notes:$('equipmentNotes').value.trim()};if(old&&old.name!==obj.name)tasks=tasks.map(t=>t.equipment===old.name?{...t,equipment:obj.name}:t);if(id)equipment=equipment.map(x=>x.id===id?obj:x);else equipment.push(obj);saveEquipment();saveTasks();$('equipmentDialog').close()});
+$('deleteEquipmentBtn').onclick=()=>{const id=$('equipmentId').value;const e=equipment.find(x=>x.id===id);if(e&&confirm(`Delete ${e.name} from equipment? Existing maintenance tasks will be kept.`)){equipment=equipment.filter(x=>x.id!==id);saveEquipment();$('equipmentDialog').close()}};
+
+$('headerActionBtn').onclick=()=>currentView==='equipment'?openEquipmentForm():openTaskForm();
+$('addEquipmentBtn').onclick=()=>openEquipmentForm();
+$('closeDialogBtn').onclick=$('cancelBtn').onclick=()=>$('taskDialog').close();
+$('closeEquipmentDialogBtn').onclick=$('cancelEquipmentBtn').onclick=()=>$('equipmentDialog').close();
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
+['searchInput','categoryFilter','statusFilter'].forEach(id=>$(id).addEventListener('input',renderTasks));
+$('resetDemoBtn').onclick=()=>{if(confirm('Replace your current maintenance tasks with the starter demo tasks?')){tasks=demo();localStorage.setItem('maintenanceCompletedCount','0');saveTasks()}};
+
+populateEquipmentSelect();renderTasks();renderEquipment();
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
