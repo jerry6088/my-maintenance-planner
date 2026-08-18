@@ -15,42 +15,62 @@
       <h1>My Maintenance Planner</h1>
       <p class="subtitle">Keep your home, vehicles, and equipment on schedule.</p>
     </div>
-    <button id="addTaskBtn" class="primary">+ Add Task</button>
+    <button id="headerActionBtn" class="primary">+ Add Task</button>
   </header>
 
   <main class="container">
-    <section class="stats" aria-label="Maintenance summary">
-      <article class="stat-card overdue"><span>Overdue</span><strong id="overdueCount">0</strong></article>
-      <article class="stat-card soon"><span>Due Soon</span><strong id="dueSoonCount">0</strong></article>
-      <article class="stat-card upcoming"><span>Upcoming</span><strong id="upcomingCount">0</strong></article>
-      <article class="stat-card complete"><span>Completed</span><strong id="completedCount">0</strong></article>
+    <nav class="tabs" aria-label="Planner sections">
+      <button class="tab active" data-view="maintenance">Maintenance</button>
+      <button class="tab" data-view="equipment">Equipment</button>
+    </nav>
+
+    <section id="maintenanceView">
+      <section class="stats" aria-label="Maintenance summary">
+        <article class="stat-card overdue"><span>Overdue</span><strong id="overdueCount">0</strong></article>
+        <article class="stat-card soon"><span>Due Soon</span><strong id="dueSoonCount">0</strong></article>
+        <article class="stat-card upcoming"><span>Upcoming</span><strong id="upcomingCount">0</strong></article>
+        <article class="stat-card complete"><span>Completed</span><strong id="completedCount">0</strong></article>
+      </section>
+
+      <section class="toolbar">
+        <input id="searchInput" type="search" placeholder="Search tasks, equipment, parts..." aria-label="Search maintenance tasks" />
+        <select id="categoryFilter" aria-label="Filter by category">
+          <option value="all">All categories</option>
+          <option>Home</option>
+          <option>HVAC & Filters</option>
+          <option>Vehicles & UTV</option>
+          <option>Lawn & Outdoor</option>
+          <option>Property</option>
+        </select>
+        <select id="statusFilter" aria-label="Filter by status">
+          <option value="all">All statuses</option>
+          <option value="overdue">Overdue</option>
+          <option value="soon">Due soon</option>
+          <option value="upcoming">Upcoming</option>
+        </select>
+      </section>
+
+      <section>
+        <div class="section-heading">
+          <div><p class="eyebrow">SCHEDULE</p><h2>Maintenance Tasks</h2></div>
+          <button id="resetDemoBtn" class="ghost">Reset Demo Data</button>
+        </div>
+        <div id="taskList" class="task-list"></div>
+        <p id="emptyState" class="empty hidden">No tasks match these filters.</p>
+      </section>
     </section>
 
-    <section class="toolbar">
-      <input id="searchInput" type="search" placeholder="Search tasks, equipment, parts..." aria-label="Search maintenance tasks" />
-      <select id="categoryFilter" aria-label="Filter by category">
-        <option value="all">All categories</option>
-        <option>Home</option>
-        <option>HVAC & Filters</option>
-        <option>Vehicles & UTV</option>
-        <option>Lawn & Outdoor</option>
-        <option>Property</option>
-      </select>
-      <select id="statusFilter" aria-label="Filter by status">
-        <option value="all">All statuses</option>
-        <option value="overdue">Overdue</option>
-        <option value="soon">Due soon</option>
-        <option value="upcoming">Upcoming</option>
-      </select>
-    </section>
-
-    <section>
+    <section id="equipmentView" class="hidden">
+      <section class="equipment-summary">
+        <article class="summary-card"><span>Total Equipment</span><strong id="equipmentCount">0</strong></article>
+        <article class="summary-card"><span>With Maintenance Tasks</span><strong id="equipmentWithTasksCount">0</strong></article>
+      </section>
       <div class="section-heading">
-        <div><p class="eyebrow">SCHEDULE</p><h2>Maintenance Tasks</h2></div>
-        <button id="resetDemoBtn" class="ghost">Reset Demo Data</button>
+        <div><p class="eyebrow">INVENTORY</p><h2>Equipment</h2></div>
+        <button id="addEquipmentBtn" class="primary">+ Add Equipment</button>
       </div>
-      <div id="taskList" class="task-list"></div>
-      <p id="emptyState" class="empty hidden">No tasks match these filters.</p>
+      <div id="equipmentList" class="equipment-grid"></div>
+      <p id="equipmentEmptyState" class="empty hidden">No equipment has been added yet.</p>
     </section>
   </main>
 
@@ -60,13 +80,27 @@
       <input type="hidden" id="taskId" />
       <label>Task name<input id="taskName" required placeholder="Change HVAC filter" /></label>
       <label>Category<select id="taskCategory" required><option>Home</option><option>HVAC & Filters</option><option>Vehicles & UTV</option><option>Lawn & Outdoor</option><option>Property</option></select></label>
-      <label>Equipment / area<input id="taskEquipment" placeholder="Main HVAC unit" /></label>
+      <label>Equipment / area<select id="taskEquipment"><option value="">None / other area</option></select></label>
       <div class="two-col"><label>Last completed<input id="lastCompleted" type="date" /></label><label>Next due<input id="nextDue" type="date" required /></label></div>
       <div class="two-col"><label>Repeat every<input id="intervalValue" type="number" min="0" value="0" /></label><label>Interval<select id="intervalUnit"><option value="days">Days</option><option value="months">Months</option><option value="years">Years</option></select></label></div>
       <div class="two-col"><label>Mileage / hours<input id="meterValue" type="number" min="0" placeholder="Optional" /></label><label>Cost ($)<input id="taskCost" type="number" min="0" step="0.01" placeholder="Optional" /></label></div>
-      <label>Part number / supplies<input id="partNumber" placeholder="Filter 20x25x1, oil filter, belt..." /></label>
+      <label>Part number / supplies<input id="partNumber" placeholder="Filter, oil, belt, spark plug..." /></label>
       <label>Notes<textarea id="taskNotes" rows="3" placeholder="Anything useful for next time"></textarea></label>
       <div class="dialog-actions"><button type="button" id="deleteTaskBtn" class="danger hidden">Delete</button><span></span><button type="button" id="cancelBtn" class="ghost">Cancel</button><button type="submit" class="primary">Save Task</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="equipmentDialog">
+    <form id="equipmentForm" method="dialog">
+      <div class="dialog-heading"><h2 id="equipmentDialogTitle">Add Equipment</h2><button type="button" id="closeEquipmentDialogBtn" class="icon-btn" aria-label="Close">×</button></div>
+      <input type="hidden" id="equipmentId" />
+      <label>Equipment name<input id="equipmentName" required placeholder="Polaris Ranger" /></label>
+      <div class="two-col"><label>Type<select id="equipmentType"><option>UTV / ATV</option><option>Mower</option><option>Tractor</option><option>Generator</option><option>Power Tool</option><option>Trailer</option><option>Appliance</option><option>Other</option></select></label><label>Year<input id="equipmentYear" type="number" min="1900" max="2100" placeholder="2020" /></label></div>
+      <div class="two-col"><label>Make<input id="equipmentMake" placeholder="Polaris" /></label><label>Model<input id="equipmentModel" placeholder="Ranger 1000" /></label></div>
+      <div class="two-col"><label>Current mileage / hours<input id="equipmentMeter" type="number" min="0" step="0.1" placeholder="Optional" /></label><label>Meter type<select id="equipmentMeterType"><option value="hours">Hours</option><option value="miles">Miles</option><option value="none">None</option></select></label></div>
+      <label>Serial / VIN<input id="equipmentSerial" placeholder="Optional" /></label>
+      <label>Notes<textarea id="equipmentNotes" rows="3" placeholder="Oil type, tire size, belt info, storage location, etc."></textarea></label>
+      <div class="dialog-actions"><button type="button" id="deleteEquipmentBtn" class="danger hidden">Delete</button><span></span><button type="button" id="cancelEquipmentBtn" class="ghost">Cancel</button><button type="submit" class="primary">Save Equipment</button></div>
     </form>
   </dialog>
 
