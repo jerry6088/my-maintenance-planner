@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1f6f43" />
+  <title>My Maintenance Planner</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">HOME & PROPERTY</p>
+      <h1>My Maintenance Planner</h1>
+      <p class="subtitle">Keep your home, vehicles, and equipment on schedule.</p>
+    </div>
+    <button id="addTaskBtn" class="primary">+ Add Task</button>
+  </header>
+
+  <main class="container">
+    <section class="stats" aria-label="Maintenance summary">
+      <article class="stat-card overdue"><span>Overdue</span><strong id="overdueCount">0</strong></article>
+      <article class="stat-card soon"><span>Due Soon</span><strong id="dueSoonCount">0</strong></article>
+      <article class="stat-card upcoming"><span>Upcoming</span><strong id="upcomingCount">0</strong></article>
+      <article class="stat-card complete"><span>Completed</span><strong id="completedCount">0</strong></article>
+    </section>
+
+    <section class="toolbar">
+      <input id="searchInput" type="search" placeholder="Search tasks, equipment, parts..." aria-label="Search maintenance tasks" />
+      <select id="categoryFilter" aria-label="Filter by category">
+        <option value="all">All categories</option>
+        <option>Home</option>
+        <option>HVAC & Filters</option>
+        <option>Vehicles & UTV</option>
+        <option>Lawn & Outdoor</option>
+        <option>Property</option>
+      </select>
+      <select id="statusFilter" aria-label="Filter by status">
+        <option value="all">All statuses</option>
+        <option value="overdue">Overdue</option>
+        <option value="soon">Due soon</option>
+        <option value="upcoming">Upcoming</option>
+      </select>
+    </section>
+
+    <section>
+      <div class="section-heading">
+        <div><p class="eyebrow">SCHEDULE</p><h2>Maintenance Tasks</h2></div>
+        <button id="resetDemoBtn" class="ghost">Reset Demo Data</button>
+      </div>
+      <div id="taskList" class="task-list"></div>
+      <p id="emptyState" class="empty hidden">No tasks match these filters.</p>
+    </section>
+  </main>
+
+  <dialog id="taskDialog">
+    <form id="taskForm" method="dialog">
+      <div class="dialog-heading"><h2 id="dialogTitle">Add Maintenance Task</h2><button type="button" id="closeDialogBtn" class="icon-btn" aria-label="Close">×</button></div>
+      <input type="hidden" id="taskId" />
+      <label>Task name<input id="taskName" required placeholder="Change HVAC filter" /></label>
+      <label>Category<select id="taskCategory" required><option>Home</option><option>HVAC & Filters</option><option>Vehicles & UTV</option><option>Lawn & Outdoor</option><option>Property</option></select></label>
+      <label>Equipment / area<input id="taskEquipment" placeholder="Main HVAC unit" /></label>
+      <div class="two-col"><label>Last completed<input id="lastCompleted" type="date" /></label><label>Next due<input id="nextDue" type="date" required /></label></div>
+      <div class="two-col"><label>Repeat every<input id="intervalValue" type="number" min="0" value="0" /></label><label>Interval<select id="intervalUnit"><option value="days">Days</option><option value="months">Months</option><option value="years">Years</option></select></label></div>
+      <div class="two-col"><label>Mileage / hours<input id="meterValue" type="number" min="0" placeholder="Optional" /></label><label>Cost ($)<input id="taskCost" type="number" min="0" step="0.01" placeholder="Optional" /></label></div>
+      <label>Part number / supplies<input id="partNumber" placeholder="Filter 20x25x1, oil filter, belt..." /></label>
+      <label>Notes<textarea id="taskNotes" rows="3" placeholder="Anything useful for next time"></textarea></label>
+      <div class="dialog-actions"><button type="button" id="deleteTaskBtn" class="danger hidden">Delete</button><span></span><button type="button" id="cancelBtn" class="ghost">Cancel</button><button type="submit" class="primary">Save Task</button></div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
