@@ -290,6 +290,65 @@ if(localStorage.getItem(MIG)!=='1'){
  localStorage.setItem(TK,JSON.stringify(tasks));
 })();
 
+
+// OEM Parts Update — verified service parts for Mahindra 4530 and Honda Recon.
+(function(){
+ const KEY='hmv2-oem-parts-verified-1';
+ if(localStorage.getItem(KEY)==='1') return;
+ const task=(asset,name)=>tasks.find(t=>t.asset===asset&&t.name===name);
+ const setParts=(asset,name,parts)=>{const t=task(asset,name);if(t)t.parts=parts;};
+
+ // Mahindra 4530 — fitment verified in 4530-specific OEM parts listings.
+ setParts('2006 Mahindra 4530','Engine oil & filter',[
+   {description:'Engine oil filter',oem:'000020316E05',qty:'1',aftermarket:'',notes:'Mahindra OEM; supersedes 006008549C1. Listed for 4530.'},
+   {description:'15W-40 diesel engine oil',oem:'MV15W401G',qty:'As required',aftermarket:'',notes:'Mahindra 15W-40 diesel engine oil, 1-gallon package number.'},
+   {description:'Oil drain plug sealing washer',oem:'000020286E05',qty:'1',aftermarket:'',notes:'Mahindra OEM sealing washer listed for 4530.'}
+ ]);
+ setParts('2006 Mahindra 4530','Replace primary fuel filter',[
+   {description:'Primary fuel filter',oem:'006006648D1',qty:'1',aftermarket:'',notes:'Mahindra OEM fuel filter listed for 4530.'}
+ ]);
+ setParts('2006 Mahindra 4530','Replace secondary fuel filter',[
+   {description:'Secondary fuel filter',oem:'001081778R93',qty:'1',aftermarket:'',notes:'Mahindra OEM secondary fuel filter listed for 4530.'}
+ ]);
+ setParts('2006 Mahindra 4530','Replace primary air-cleaner element',[
+   {description:'Primary / outer air filter',oem:'006008799F1',qty:'1',aftermarket:'',notes:'Mahindra OEM primary outer air filter listed for 4530.'}
+ ]);
+ setParts('2006 Mahindra 4530','Replace air-cleaner safety cartridge',[
+   {description:'Secondary / inner air filter',oem:'006000456F1',qty:'1',aftermarket:'',notes:'Mahindra OEM inner air filter listed for 4530.'}
+ ]);
+ setParts('2006 Mahindra 4530','Hydraulic suction filter replacement',[
+   {description:'Hydraulic oil filter',oem:'000013427P04',qty:'1',aftermarket:'',notes:'Mahindra OEM hydraulic oil filter; fitment listing includes 4530.'},
+   {description:'Hydraulic suction strainer',oem:'000013701P04',qty:'1 as needed',aftermarket:'',notes:'Mahindra OEM suction strainer listed for 4530.'},
+   {description:'Suction strainer gasket',oem:'007201350C1',qty:'1 as needed',aftermarket:'',notes:'Mahindra OEM gasket listed for 4530.'},
+   {description:'Universal 3 synthetic transmission/hydraulic fluid',oem:'MVUTF1G',qty:'As required',aftermarket:'',notes:'Mahindra MUTTO 3 / Universal 3 fluid, 1-gallon package number.'}
+ ]);
+ setParts('2006 Mahindra 4530','Transmission oil change & strainer cleaning',[
+   {description:'Universal 3 synthetic transmission/hydraulic fluid',oem:'MVUTF1G',qty:'As required',aftermarket:'',notes:'Mahindra MUTTO 3 / Universal 3 fluid.'},
+   {description:'Hydraulic suction strainer',oem:'000013701P04',qty:'Inspect/clean; replace as needed',aftermarket:'',notes:'4530-listed OEM strainer.'},
+   {description:'Suction strainer gasket',oem:'007201350C1',qty:'1 as needed',aftermarket:'',notes:'4530-listed OEM gasket.'}
+ ]);
+ const fan=task('2006 Mahindra 4530','Cooling system / fan belt inspection');
+ if(fan) fan.parts=[
+   {description:'Fan belt',oem:'000020325E05',qty:'1 as needed',aftermarket:'',notes:'Mahindra OEM fan belt listed for 4530.'}
+ ];
+
+ // Honda 2007 Recon TRX250 — parts shared by TM/TE where verified.
+ setParts('2007 Honda Recon 250','Air cleaner service',[
+   {description:'Air cleaner element / air cleaner',oem:'17254-HM8-000',qty:'1',aftermarket:'',notes:'Honda OEM air-cleaner part listed for Recon family; air-cleaner assembly components are shared across 2007 TRX250TM/TE listings.'}
+ ]);
+ setParts('2007 Honda Recon 250','Spark plug inspection',[
+   {description:'Standard spark plug',oem:'98069-58916',qty:'1',aftermarket:'NGK DPR8EA-9',notes:'Honda OEM listing identifies DPR8EA-9 (NGK) as the standard plug; colder/hotter optional plugs also exist.'}
+ ]);
+ // Recon engine has reusable strainer/centrifugal filter rather than a conventional replaceable spin-on oil filter.
+ const oil=task('2007 Honda Recon 250','Engine oil service');
+ if(oil) oil.parts=[
+   {description:'4-stroke engine oil',oem:'Honda GN4 or manual-equivalent specification',qty:'Verify exact service capacity',aftermarket:'',notes:'No conventional replaceable spin-on oil filter is assigned here; the maintenance schedule separately services the oil strainer screen and centrifugal oil filter.'}
+ ];
+
+ localStorage.setItem(KEY,'1');
+ localStorage.setItem(TK,JSON.stringify(tasks));
+})();
+
 localStorage.setItem(AK,JSON.stringify(assets));localStorage.setItem(TK,JSON.stringify(tasks));localStorage.setItem(HK,JSON.stringify(history));
 
 const $=x=>document.getElementById(x);
