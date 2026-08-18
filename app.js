@@ -425,6 +425,84 @@ if(localStorage.getItem(MIG)!=='1'){
  localStorage.setItem(KEY,'1');
 })();
 
+
+// OEM Parts Visibility Fix 3
+// Guarantees OEM numbers are visible by appending them to task notes as well as parts arrays.
+(function(){
+ const KEY='hmv2-oem-parts-visible-fix-3';
+ if(localStorage.getItem(KEY)==='1') return;
+
+ const norm=s=>(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+ const findTask=(asset,keywords)=>{
+   const ks=keywords.map(norm);
+   return tasks.find(t=>norm(t.asset)===norm(asset) && ks.every(k=>norm(t.name).includes(k)));
+ };
+ const ensure=(asset,name,keywords)=>{
+   let t=findTask(asset,keywords);
+   if(!t){
+     t={id:uid(),asset,name,dueDate:'',months:0,miles:0,hours:0,notes:'',parts:[]};
+     tasks.push(t);
+   }
+   if(!Array.isArray(t.parts)) t.parts=[];
+   return t;
+ };
+ const inject=(asset,name,keywords,partsText,partsArr)=>{
+   const t=ensure(asset,name,keywords);
+   const marker='OEM PARTS:';
+   let base=(t.notes||'').split(marker)[0].trim();
+   t.notes=(base?base+' ':'')+marker+' '+partsText;
+   t.parts=partsArr;
+   return t;
+ };
+
+ inject('2006 Mahindra 4530','Engine oil & filter',['oil'],
+   'Oil filter 000020316E05; drain washer 000020286E05; Mahindra 15W-40 oil package MV15W401G.',
+   [
+    {description:'Engine oil filter',oem:'000020316E05',qty:'1',aftermarket:'',notes:'Mahindra OEM; supersedes 006008549C1.'},
+    {description:'Oil drain plug sealing washer',oem:'000020286E05',qty:'1',aftermarket:'',notes:'Mahindra OEM.'},
+    {description:'15W-40 diesel engine oil',oem:'MV15W401G',qty:'As required',aftermarket:'',notes:'Mahindra 15W-40 package number.'}
+   ]);
+
+ inject('2006 Mahindra 4530','Replace primary fuel filter',['primary','fuel'],
+   'Primary fuel filter 006006648D1.',
+   [{description:'Primary fuel filter',oem:'006006648D1',qty:'1',aftermarket:'',notes:'Mahindra OEM.'}]);
+
+ inject('2006 Mahindra 4530','Replace secondary fuel filter',['secondary','fuel'],
+   'Secondary fuel filter 001081778R93.',
+   [{description:'Secondary fuel filter',oem:'001081778R93',qty:'1',aftermarket:'',notes:'Mahindra OEM.'}]);
+
+ inject('2006 Mahindra 4530','Air filter service',['air'],
+   'Outer air filter 006008799F1; inner/safety air filter 006000456F1.',
+   [
+    {description:'Outer air filter',oem:'006008799F1',qty:'1',aftermarket:'',notes:'Mahindra OEM.'},
+    {description:'Inner / safety air filter',oem:'006000456F1',qty:'1',aftermarket:'',notes:'Mahindra OEM.'}
+   ]);
+
+ inject('2006 Mahindra 4530','Hydraulic oil & filter service',['hydraulic'],
+   'Hydraulic filter 000013427P04; suction strainer 000013701P04; strainer gasket 007201350C1; hydraulic fluid package MVUTF1G.',
+   [
+    {description:'Hydraulic oil filter',oem:'000013427P04',qty:'1',aftermarket:'',notes:'Mahindra OEM.'},
+    {description:'Hydraulic suction strainer',oem:'000013701P04',qty:'1 as needed',aftermarket:'',notes:'Mahindra OEM.'},
+    {description:'Suction strainer gasket',oem:'007201350C1',qty:'1 as needed',aftermarket:'',notes:'Mahindra OEM.'},
+    {description:'Transmission / hydraulic fluid',oem:'MVUTF1G',qty:'As required',aftermarket:'',notes:'Mahindra Universal 3 / MUTTO type package number.'}
+   ]);
+
+ inject('2006 Mahindra 4530','Cooling system / fan belt inspection',['belt'],
+   'Fan belt 000020325E05.',
+   [{description:'Fan belt',oem:'000020325E05',qty:'1 as needed',aftermarket:'',notes:'Mahindra OEM.'}]);
+
+ inject('2007 Honda Recon 250','Air cleaner service',['air'],
+   'Air cleaner element 17254-HM8-000.',
+   [{description:'Air cleaner element',oem:'17254-HM8-000',qty:'1',aftermarket:'',notes:'Honda OEM.'}]);
+
+ inject('2007 Honda Recon 250','Spark plug inspection',['spark'],
+   'Spark plug Honda 98069-58916 / NGK DPR8EA-9.',
+   [{description:'Spark plug',oem:'98069-58916',qty:'1',aftermarket:'NGK DPR8EA-9',notes:'Honda standard plug listing.'}]);
+
+ localStorage.setItem(TK,JSON.stringify(tasks));
+ localStorage.setItem(KEY,'1');
+})();
+
 localStorage.setItem(AK,JSON.stringify(assets));localStorage.setItem(TK,JSON.stringify(tasks));localStorage.setItem(HK,JSON.stringify(history));
 
 const $=x=>document.getElementById(x);
